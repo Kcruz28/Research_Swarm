@@ -1,6 +1,8 @@
 from langchain_docling.loader import DoclingLoader
 from orchestration import Orchestration
 from agents import Agents
+from rich.console import Console
+from rich.table import Table
 
 
 def main():
@@ -24,12 +26,22 @@ def main():
     print("\n" + "="*60)
     print("GRAPH EXECUTION RESULTS")
     print("="*60)
-    for i, msg in enumerate(result["messages"]):
-        # Messages are LangChain Message objects with type and content attributes
-        msg_type = type(msg).__name__
-        print(f"\nMessage {i}: {msg_type.upper()}")
-        print(f"Content: {msg.content[:200]}...")  # Show first 200 chars
-
+    
+    # Create a table to display the results
+    table = Table(title="Research Analysis Pipeline")
+    table.add_column("Agent", style="cyan")
+    table.add_column("Output", style="magenta")
+    
+    # Add rows for each agent's output (skip the initial HumanMessage)
+    agent_names = ["Analyst", "Critic", "Refiner"]
+    for i, name in enumerate(agent_names):
+        msg_content = result["messages"][i + 1].content  # Skip first message (HumanMessage)
+        # Truncate long content for display
+        display_content = msg_content[:300] + "..." if len(msg_content) > 300 else msg_content
+        table.add_row(name, display_content)
+    
+    console = Console()
+    console.print(table)
 
 if __name__ == "__main__":
     main()

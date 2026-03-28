@@ -31,7 +31,7 @@ class Agents:
             elapsed = time.time() - start
             console.print(f"[blue]✓ Analyst done in {elapsed:.1f}s")
         
-        return {"messages": state["messages"] + [AIMessage(content=f"Analyst: {response}")]}
+        return {"messages": [AIMessage(content=f"Analyst: {response.content}")]}
 
     def critic(self, state):
         console = Console()
@@ -46,7 +46,7 @@ class Agents:
             elapsed = time.time() - start
             console.print(f"[red]✓ Critic done in {elapsed:.1f}s")
         
-        return {"messages": state["messages"] + [AIMessage(content=f"Critic: {response}")]}
+        return {"messages": [AIMessage(content=f"Analyst: {response.content}")]}
 
     def refiner(self, state):
         console = Console()
@@ -61,7 +61,7 @@ class Agents:
             elapsed = time.time() - start
             console.print(f"[green]✓ Refiner done in {elapsed:.1f}s")
         
-        return {"messages": state["messages"] + [AIMessage(content=f"Refiner: {response}")]}
+        return {"messages": [AIMessage(content=f"Analyst: {response.content}")]}
 
 
 
