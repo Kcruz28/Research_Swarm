@@ -20,7 +20,7 @@ class Agents:
     def analysist(self, state):
         console = Console()
         data_text = "\n".join([doc.page_content for doc in self.data]) if isinstance(self.data, list) else self.data
-        prompt = "Summarize this paper in 3 bullet points. Be concise. Max 50 words total. Paper: " + data_text
+        prompt = "Summarize in 10 words. Be direct: " + data_text
         
         print(f"DEBUG: Extracted {len(data_text)} chars from document for analysis")
         print(f"DEBUG: Sending {len(prompt)} chars to {self.model.model}")
@@ -37,7 +37,7 @@ class Agents:
         console = Console()
         # Extract the last message using .content attribute (not dictionary subscripting)
         analysist_message = state["messages"][-1].content
-        prompt = "List 2 flaws in these points. Be specific. Max 30 words. " \
+        prompt = "Criticize in 10 words. Be direct: " \
         + analysist_message
         
         with console.status("[bold red]Critic is looking for flaws...", spinner="dots"):
@@ -46,13 +46,13 @@ class Agents:
             elapsed = time.time() - start
             console.print(f"[red]✓ Critic done in {elapsed:.1f}s")
         
-        return {"messages": [AIMessage(content=f"Analyst: {response.content}")]}
+        return {"messages": [AIMessage(content=f"Critic: {response.content}")]}
 
     def refiner(self, state):
         console = Console()
         # Extract the last message using .content attribute (not dictionary subscripting)
         critic_message = state["messages"][-1].content
-        prompt = "Improve these points. Be clear. Max 50 words. " \
+        prompt = "Improve in 10 words. Be direct: " \
         + critic_message
         
         with console.status("[bold green]Refiner is polishing the final summary...", spinner="dots"):
@@ -61,7 +61,7 @@ class Agents:
             elapsed = time.time() - start
             console.print(f"[green]✓ Refiner done in {elapsed:.1f}s")
         
-        return {"messages": [AIMessage(content=f"Analyst: {response.content}")]}
+        return {"messages": [AIMessage(content=f"Refiner: {response.content}")]} 
 
 
 
