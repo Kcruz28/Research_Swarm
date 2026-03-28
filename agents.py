@@ -1,39 +1,67 @@
-from langchain_ollama import OllamaLLM
+from langchain_ollama import ChatOllama
 from langgraph.graph import StateGraph, END
-
+from rich.console import Console
+from langchain_core.messages import AIMessage
+import time
 
 
 class Agents:
-    def __init__(self):
-        self.model = OllamaLLM(
-            model="qwen2.5-coder:1.5b",
-            temperature=0.7,
-            base_url="http://localhost:11434"
+    def __init__(self, data):
+        self.model = ChatOllama(
+            model="qwen3.5:0.8b",
+            temperature=1.0,
+            presence_penalty=1.5, # The key to stopping the hang!
+            base_url="http://localhost:11434",
+            additional_kwargs={"think": False}
         )
+        self.data = data
 
     #nodes
     def analysist(self, state):
-        # Extract the user message from state
-        # state["messages"][-1] is a Message object, use .content attribute
-        user_input = state["messages"][-1].content if state.get("messages") else "No input"
-        prompt = "You are an analyst. Analyze the following research paper and make a " \
-        "detailed summary of the paper. The paper is: " + user_input
-        response = self.model.invoke(prompt)
-        return {"messages": [{"role": "ai", "content": f"Analyst: {response}"}]}
+        console = Console()
+        data_text = "\n".join([doc.page_content for doc in self.data]) if isinstance(self.data, list) else self.data
+        prompt = "Summarize this paper in 3 bullet points. Be concise. Max 50 words total. Paper: " + data_text
+        
+        print(f"DEBUG: Extracted {len(data_text)} chars from document for analysis")
+        print(f"DEBUG: Sending {len(prompt)} chars to {self.model.model}")
+        
+        with console.status("[bold blue]Analyst is deconstructing the paper...", spinner="dots"):
+            start = time.time()
+            response = self.model.invoke(prompt)
+            elapsed = time.time() - start
+            console.print(f"[blue]✓ Analyst done in {elapsed:.1f}s")
+        
+        return {"messages": state["messages"] + [AIMessage(content=f"Analyst: {response}")]}
 
     def critic(self, state):
+        console = Console()
         # Extract the last message using .content attribute (not dictionary subscripting)
-        user_input = state["messages"][-1].content if state.get("messages") else "No input"
-        prompt = "You are a critic. Critique the following research paper summary. Summary: " + user_input
-        response = self.model.invoke(prompt)
-        return {"messages": [{"role": "ai", "content": f"Critic: {response}"}]}
+        analysist_message = state["messages"][-1].content
+        prompt = "List 2 flaws in these points. Be specific. Max 30 words. " \
+        + analysist_message
+        
+        with console.status("[bold red]Critic is looking for flaws...", spinner="dots"):
+            start = time.time()
+            response = self.model.invoke(prompt)
+            elapsed = time.time() - start
+            console.print(f"[red]✓ Critic done in {elapsed:.1f}s")
+        
+        return {"messages": state["messages"] + [AIMessage(content=f"Critic: {response}")]}
 
     def refiner(self, state):
+        console = Console()
         # Extract the last message using .content attribute (not dictionary subscripting)
-        user_input = state["messages"][-1].content if state.get("messages") else "No input"
-        prompt = "You are a refiner. Refine the following research paper summary based on critique. Summary: " + user_input
-        response = self.model.invoke(prompt)
-        return {"messages": [{"role": "ai", "content": f"Refiner: {response}"}]}
+        critic_message = state["messages"][-1].content
+        prompt = "Improve these points. Be clear. Max 50 words. " \
+        + critic_message
+        
+        with console.status("[bold green]Refiner is polishing the final summary...", spinner="dots"):
+            start = time.time()
+            response = self.model.invoke(prompt)
+            elapsed = time.time() - start
+            console.print(f"[green]✓ Refiner done in {elapsed:.1f}s")
+        
+        return {"messages": state["messages"] + [AIMessage(content=f"Refiner: {response}")]}
 
 
 

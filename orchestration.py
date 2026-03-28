@@ -4,9 +4,6 @@ from agents import Agents
 
 
 
-def mock_llm(state: MessagesState):
-    return {"messages": [{"role": "ai", "content": "hello world"}]}
-
 class Orchestration:
     def __init__(self):
         self.graph = StateGraph(MessagesState)

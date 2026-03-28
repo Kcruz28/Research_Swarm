@@ -1,9 +1,16 @@
+from langchain_docling.loader import DoclingLoader
 from orchestration import Orchestration
 from agents import Agents
 
 
 def main():
-    agents = Agents()
+
+    FILE_PATH = "test_search.pdf"
+    print(f"Loading document from: {FILE_PATH}")
+    loader = DoclingLoader(file_path=FILE_PATH)
+    data = loader.load()
+    print("Loaded document content")
+    agents = Agents(data)
     orchestration = Orchestration()
     orchestration.add_node('analysist', agents.analysist)
     orchestration.add_node('critic', agents.critic)
@@ -18,8 +25,10 @@ def main():
     print("GRAPH EXECUTION RESULTS")
     print("="*60)
     for i, msg in enumerate(result["messages"]):
-        print(f"\nMessage {i}: {msg.get('role', 'unknown').upper()}")
-        print(f"Content: {msg.get('content', 'No content')[:200]}...")  # Show first 200 chars
+        # Messages are LangChain Message objects with type and content attributes
+        msg_type = type(msg).__name__
+        print(f"\nMessage {i}: {msg_type.upper()}")
+        print(f"Content: {msg.content[:200]}...")  # Show first 200 chars
 
 
 if __name__ == "__main__":

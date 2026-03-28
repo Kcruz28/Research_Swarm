@@ -1,2 +1,5 @@
 research_env/
 __pycache__/
+__init__.py
+*.pyc
+*.pyo
