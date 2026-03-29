@@ -31,7 +31,14 @@ class Agents:
             elapsed = time.time() - start
             console.print(f"[blue]✓ Analyst done in {elapsed:.1f}s")
         
-        return {"messages": [AIMessage(content=f"Analyst: {response.content}")]}
+        # Debug: Check what response is
+        print(f"DEBUG Analyst response type: {type(response)}")
+        print(f"DEBUG Analyst response: {response}")
+        
+        # Extract content - handle both string and object responses
+        response_content = response.content if hasattr(response, 'content') else str(response)
+        
+        return {"messages": state["messages"] + [AIMessage(content=f"Analyst: {response_content}")]}
 
     def critic(self, state):
         console = Console()
@@ -46,7 +53,14 @@ class Agents:
             elapsed = time.time() - start
             console.print(f"[red]✓ Critic done in {elapsed:.1f}s")
         
-        return {"messages": [AIMessage(content=f"Critic: {response.content}")]}
+        # Debug: Check what response is
+        print(f"DEBUG Critic response type: {type(response)}")
+        print(f"DEBUG Critic response: {response}")
+        
+        # Extract content - handle both string and object responses
+        response_content = response.content if hasattr(response, 'content') else str(response)
+        
+        return {"messages": state["messages"] + [AIMessage(content=f"Critic: {response_content}")]}
 
     def refiner(self, state):
         console = Console()
@@ -61,7 +75,14 @@ class Agents:
             elapsed = time.time() - start
             console.print(f"[green]✓ Refiner done in {elapsed:.1f}s")
         
-        return {"messages": [AIMessage(content=f"Refiner: {response.content}")]} 
+        # Debug: Check what response is
+        print(f"DEBUG Refiner response type: {type(response)}")
+        print(f"DEBUG Refiner response: {response}")
+        
+        # Extract content - handle both string and object responses
+        response_content = response.content if hasattr(response, 'content') else str(response)
+        
+        return {"messages": state["messages"] + [AIMessage(content=f"Refiner: {response_content}")]} 
 
 
 
