@@ -9,8 +9,9 @@ class Agents:
     def __init__(self, data):
         self.model = ChatOllama(
             model="qwen3.5:0.8b",
-            temperature=0,
+            temperature=0.1,
             base_url="http://localhost:11434",
+            num_predict=100
         )
         self.data = data
 
@@ -18,7 +19,7 @@ class Agents:
     def analysist(self, state):
         console = Console()
         data_text = "\n".join([doc.page_content for doc in self.data]) if isinstance(self.data, list) else self.data
-        prompt = "Summarize in 10 words. Be direct: " + data_text
+        prompt = "Write a one-sentence summary of this text: " + data_text
         
         print(f"DEBUG: Extracted {len(data_text)} chars from document for analysis")
         print(f"DEBUG: Sending {len(prompt)} chars to {self.model.model}")
@@ -42,7 +43,7 @@ class Agents:
         console = Console()
         # Extract the last message using .content attribute (not dictionary subscripting)
         analysist_message = state["messages"][-1].content
-        prompt = "Criticize in 10 words. Be direct: " \
+        prompt = "Name one missing detail from this summary: " \
         + analysist_message
         
         with console.status("[bold red]Critic is looking for flaws...", spinner="dots"):
@@ -64,7 +65,7 @@ class Agents:
         console = Console()
         # Extract the last message using .content attribute (not dictionary subscripting)
         critic_message = state["messages"][-1].content
-        prompt = "Improve in 10 words. Be direct: " \
+        prompt = "Rewrite this summary to be better: " \
         + critic_message
         
         with console.status("[bold green]Refiner is polishing the final summary...", spinner="dots"):
