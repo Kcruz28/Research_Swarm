@@ -9,9 +9,8 @@ class Agents:
     def __init__(self, data):
         self.model = ChatOllama(
             model="qwen3.5:0.8b",
-            temperature=0.1,
+            temperature=0.7,
             base_url="http://localhost:11434",
-            num_predict=100
         )
         self.data = data
 
@@ -19,6 +18,7 @@ class Agents:
     def analysist(self, state):
         console = Console()
         data_text = "\n".join([doc.page_content for doc in self.data]) if isinstance(self.data, list) else self.data
+        print(f"--- RAW TEXT PREVIEW ---\n{data_text[:500]}\n-----------------------")
         prompt = "Write a one-sentence summary of this text: " + data_text
         
         print(f"DEBUG: Extracted {len(data_text)} chars from document for analysis")

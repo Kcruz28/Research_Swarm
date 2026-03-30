@@ -7,7 +7,7 @@ from rich.table import Table
 
 def main():
 
-    FILE_PATH = "test_search.pdf"
+    FILE_PATH = "IEEE Xplore Full-Text PDF_.pdf"
     print(f"Loading document from: {FILE_PATH}")
     loader = DoclingLoader(file_path=FILE_PATH)
     data = loader.load()
