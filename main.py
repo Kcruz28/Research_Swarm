@@ -3,21 +3,20 @@ from orchestration import Orchestration
 from agents import Agents
 from rich.console import Console
 from rich.table import Table
+from pdf_reader import PDFReader
 
 
 def main():
 
     FILE_PATH = "IEEE Xplore Full-Text PDF_.pdf"
     print(f"Loading document from: {FILE_PATH}")
-    loader = DoclingLoader(file_path=FILE_PATH)
-    data = loader.load()
-    print("Loaded document content")
+    data = PDFReader(file_path=FILE_PATH).load_pdf()
     agents = Agents(data)
     orchestration = Orchestration()
     orchestration.add_node('analysist', agents.analysist)
     orchestration.add_node('critic', agents.critic)
     orchestration.add_node('refiner', agents.refiner)
-    orchestration.add_edge('analysist', 'critic', 'refiner')
+    orchestration.add_edges('analysist', 'critic', 'refiner')
     
     # Run the graph - flows through all nodes
     result = orchestration.run()
@@ -37,7 +36,7 @@ def main():
     for i, name in enumerate(agent_names):
         msg_content = result["messages"][i + 1].content  # Skip first message (HumanMessage)
         # Truncate long content for display
-        display_content = msg_content[:300] + "..." if len(msg_content) > 300 else msg_content
+        display_content = msg_content
         table.add_row(name, display_content)
     
     console = Console()

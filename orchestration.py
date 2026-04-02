@@ -13,11 +13,26 @@ class Orchestration:
         self.graph.add_node(node_name, node_func)
         self.agents[node_name] = node_func
 
-    def add_edge(self, agent1, agent2, agent3):
+    def add_edges(self, agent1, agent2, agent3):
         self.graph.add_edge(START, agent1)
         self.graph.add_edge(agent1, agent2)
-        self.graph.add_edge(agent2, agent3)
+        self.graph.add_conditional_edges(
+            agent2, 
+            self.router,      
+            {                 
+                "analysist": agent1, 
+                "refiner": agent3
+            }
+        )
         self.graph.add_edge(agent3, END)
+
+    def router(self, state):
+        if "REJECTED" in state["messages"][-1].content.upper():
+            print("Critic REJECTED the summary, sending back to Analyst for revision.")
+            return "analysist"
+        else:
+            print("Critic APPROVED the summary, sending to Refiner for polishing.")
+            return "refiner"
 
     def run(self):
         # Compile the graph - finalizes the structure
@@ -30,7 +45,7 @@ class Orchestration:
         # invoke() executes the entire graph:
         # START -> analysist -> critic -> refiner -> END
         # Each node receives the current state and adds/modifies messages
-        result = graph.invoke(initial_state)
+        result = graph.invoke(initial_state, config={"recursion_limit": 10})
         
         # Return the final state with all messages from all nodes
         return result
