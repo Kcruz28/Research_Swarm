@@ -36,9 +36,16 @@ class Agents:
         last_message = state["messages"][-1].content if state["messages"] else ""
         feedback = f"\n\nCRITIC FEEDBACK: {last_message}" if "REJECTED" in last_message else ""
         
-        print(f"--- RAW TEXT PREVIEW ---\n{data_text[:500]}\n-----------------------")
-        prompt = f"""Write a one-sentence summary of this text: {data_text}
-        {feedback}
+        # print(f"--- RAW TEXT PREVIEW ---\n{data_text[:500]}\n-----------------------")
+
+        prompt = f"""
+        Summarize the following research paper. 
+        Focus on the TECHNICAL ARCHITECTURE and the QUANTITATIVE RESULTS.
+        
+        STRUCTURE:
+        - Core Contribution: (5-6 sentences)
+        - Key Metrics/Results: (Specific percentages or improvements)
+        - Methodology: (Algorithm names used) {data_text} {feedback}
         If there is feedback above, ensure you incorporate the missing details into your new summary."""
         
         with console.status("[bold blue]Analyst is deconstructing the paper...", spinner="dots"):
@@ -52,6 +59,12 @@ class Agents:
     def critic(self, state):
         console = Console()
         # Extract the last message using .content attribute (not dictionary subscripting)
+
+        # stoping infinite loop
+        if len(state["messages"]) > 4: 
+            console.print("[yellow]! Overriding Critic: Maximum attempts reached, forcing approval.")
+            return {"messages": [AIMessage(content="APPROVED: Maximum revision limit reached.")]}
+
         analysist_message = state["messages"][-1].content
         paper_text = "\n".join([doc.page_content for doc in self.data])
 
@@ -80,7 +93,17 @@ class Agents:
 
         full_history = "\n".join([m.content for m in state["messages"]])
 
-        prompt = f"""Revise the summary to be clearer, more accurate, and more engaging while preserving the original meaning: 
+        prompt = f"""
+        Review the summary and the Critic's feedback below.
+        Produce a final technical summary that is dense with information.
+        
+        CRITICAL RULES:
+        1. REMOVE 'filler' phrases (e.g., 'In this paper', 'The researchers found').
+        2. START with the technology itself.
+        3. ENSURE all metrics mentioned by the Critic are included.
+        4. Use 5-10 sentences to ensure depth.
+        
+        HISTORY: 
         {full_history}"""
         
         with console.status("[bold green]Refiner is polishing the final summary...", spinner="dots"):

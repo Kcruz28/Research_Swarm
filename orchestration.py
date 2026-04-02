@@ -27,6 +27,10 @@ class Orchestration:
         self.graph.add_edge(agent3, END)
 
     def router(self, state):
+        if len(state["messages"]) > 6:
+                print("Safety triggered: Forcing move to Refiner to avoid infinite loop.")
+                return "refiner"
+                
         if "REJECTED" in state["messages"][-1].content.upper():
             print("Critic REJECTED the summary, sending back to Analyst for revision.")
             return "analysist"
