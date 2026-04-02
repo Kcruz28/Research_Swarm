@@ -1,143 +1,101 @@
 # Research_Swarm
 
-A multi-agent research paper analysis system using LangChain, LangGraph, and Ollama LLM.
+Research_Swarm is a small multi-agent pipeline for reading a research PDF, drafting a summary, critiquing it, and producing a refined final version using LangGraph and a local Ollama model.
 
-## Overview
+## What It Does
 
-Research_Swarm is an orchestrated workflow that analyzes research papers through multiple specialized agents:
-- **Analyst**: Creates detailed summaries of research papers
-- **Critic**: Provides critique of the analysis
-- **Refiner**: Refines the summary based on feedback
+The workflow is split across three agents:
 
-The agents work together in a sequential pipeline using LangGraph's StateGraph.
+- `analysist`: reads the paper and creates an initial technical summary
+- `critic`: checks the summary against the source text and rejects weak coverage
+- `refiner`: produces the final polished summary after review
+
+The app also prints a trace table of the conversation and renders the final refined summary with Rich Markdown.
+
+## Current Structure
+
+```text
+Research_Swarm/
+├── main.py
+├── orchestration.py
+├── agents.py
+├── pdf_reader.py
+├── requirements.txt
+├── test.py
+├── test_agents.py
+└── README.md
+```
 
 ## Requirements
 
-- **Python**: 3.12 or higher
-- **Ollama**: Local LLM runtime (for running language models locally)
+- Python 3.12+
+- Ollama running locally at `http://localhost:11434`
+- A pulled model that matches `agents.py`, currently `qwen3.5:4b`
 
-## Installation
+## Setup
 
-### 1. Prerequisites
-Ensure you have Python 3.12+ installed:
-```bash
-python3 --version
-```
+1. Create and activate the virtual environment:
 
-Install Ollama from: https://ollama.ai
-
-### 2. Create Virtual Environment
 ```bash
 python3.12 -m venv research_env
-source research_env/bin/activate  # On Windows: research_env\Scripts\activate
+source research_env/bin/activate
 ```
 
-### 3. Install Dependencies
+2. Install dependencies:
+
 ```bash
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 4. Configure Ollama Model
-Pull a language model (qwen2.5-coder is used by default):
-```bash
-ollama pull qwen2.5-coder:1.5b
-```
+3. Start Ollama and pull the configured model:
 
-Start Ollama service:
 ```bash
 ollama serve
+ollama pull qwen3.5:4b
 ```
 
-## Usage
+## Run
 
-### Running the Project
+The default entry point is `main.py`:
+
 ```bash
-python3 main.py
+python main.py
 ```
 
-### Expected Output
-The script will:
-1. Create an Orchestration with 3 agent nodes (analysist, critic, refiner)
-2. Connect them in a pipeline: START → analysist → critic → refiner → END
-3. Invoke the graph with a user message
-4. Display all agent responses
+By default, the app loads the PDF named `IEEE Xplore Full-Text PDF_.pdf` from the project root. If your file has a different name or location, update `FILE_PATH` in [main.py](main.py).
 
-Example:
-```
-============================================================
-GRAPH EXECUTION RESULTS
-============================================================
+## Data Flow
 
-Message 0: USER
-Content: Analyze this research paper...
+1. `PDFReader` loads the PDF through Docling and OCR-aware pipeline options.
+2. `Orchestration` builds a LangGraph `MessagesState` workflow.
+3. `Agents` runs the analyst, critic, and refiner nodes with `ChatOllama`.
+4. `main.py` prints the message history and the final refined summary.
 
-Message 1: AI
-Content: Analyst: [detailed summary]...
-
-Message 2: AI
-Content: Critic: [critique]...
-
-Message 3: AI
-Content: Refiner: [refined summary]...
-```
-
-## Project Structure
-```
-Research_Swarm/
-├── main.py              # Entry point
-├── orchestration.py     # Graph orchestration and workflow logic
-├── agents.py           # Agent definitions (Analyst, Critic, Refiner)
-├── requirements.txt    # Python dependencies
-└── README.md          # This file
-```
-
-## How It Works
-
-### State Flow
-Each node receives and updates `MessagesState`:
-```python
-START
-  ↓
-Input message
-  ↓
-analysist (analyzes research paper)
-  ↓
-critic (critiques the analysis)
-  ↓
-refiner (refines based on criticism)
-  ↓
-END
-  ↓
-Output: All accumulated messages
-```
-
-### Key Concepts
-- **StateGraph**: Defines the workflow structure
-- **MessagesState**: State schema containing message history
-- **Nodes**: Agent functions that process state
-- **Edges**: Connections defining execution flow
-- **invoke()**: Executes the entire graph pipeline
-
-## Troubleshooting
-
-### Issue: `ModuleNotFoundError`
-- Ensure virtual environment is activated: `source research_env/bin/activate`
-- Install dependencies: `pip install -r requirements.txt`
-
-### Issue: Connection refused to Ollama
-- Verify Ollama is running: `ollama serve`
-- Check Ollama client URL in `agents.py` (default: `http://localhost:11434`)
-
-### Issue: Model not found
-- List available models: `ollama ls`
-- Pull the required model: `ollama pull qwen2.5-coder:1.5b`
+The graph loop is intentionally simple: `START -> analysist -> critic -> (analysist or refiner) -> END`.
 
 ## Dependencies
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| langchain-ollama | ≥0.1.0 | Ollama LLM integration |
-| langgraph | ≥0.0.1 | Graph orchestration framework |
-| langchain | ≥0.1.0 | LLM abstraction and tools |
-| python-dotenv | ≥1.0.0 | Environment variable management |
+The project currently uses these packages:
+
+- `langchain-ollama`
+- `langgraph`
+- `langchain`
+- `langchain-core`
+- `langchain-community`
+- `langchain-docling`
+- `docling`
+- `rich`
+- `pydantic`
+- `python-dotenv`
+
+## Troubleshooting
+
+- If you see `NameError: HumanMessage is not defined`, make sure `langchain-core` is installed and that [main.py](main.py) and [agents.py](agents.py) import it correctly.
+- If Ollama connection fails, confirm `ollama serve` is running and the base URL in [agents.py](agents.py) is still `http://localhost:11434`.
+- If the PDF does not load, verify the file path in [pdf_reader.py](pdf_reader.py) and ensure the document is readable by Docling.
+
+## Notes
+
+- The method name `analysist` is intentionally kept as-is because it is referenced throughout the graph wiring.
+- The project includes `test.py` and `test_agents.py`, but the main runtime path is `main.py`.
