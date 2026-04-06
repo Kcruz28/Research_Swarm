@@ -7,7 +7,7 @@ import time
 
 
 class SummaryOutput(BaseModel):
-    summary: str = Field(description="The 1-sentence summary of the paper")
+    summary: str = Field(description="The comprehensive summary of the paper, adhering strictly to all requested formatting including bullet points and paragraphs")
     confidence: float = Field(description="0.0 to 1.0")
 
 class CriticOutput(BaseModel):
