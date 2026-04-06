@@ -17,14 +17,14 @@ class CriticOutput(BaseModel):
 
 class Agents:
     def __init__(self, data):
-        raw_model = ChatOllama(
+        self.raw_model = ChatOllama(
             model="qwen3.5:4b",  # Or whatever specific 9B model you have pulled, like "llama3.1:8b" or "qwen2.5"
             # temperature=0.7,
             base_url="http://localhost:11434",
             # num_ctx=32000,  # Expand the model's memory to allow reading large documents
         )
-        self.summary_writer = raw_model.with_structured_output(SummaryOutput)
-        self.critic_reviewer = raw_model.with_structured_output(CriticOutput)
+        self.summary_writer = self.raw_model.with_structured_output(SummaryOutput)
+        self.critic_reviewer = self.raw_model.with_structured_output(CriticOutput)
         self.data = data
 
     #nodes
@@ -91,11 +91,13 @@ class Agents:
         
         with console.status("[bold green]Refiner is polishing the final summary...", spinner="dots"):
             start = time.time()
-            response = self.summary_writer.invoke([HumanMessage(content=prompt)])
+            # We use the raw model without structured output for perfect Markdown formatting
+            response = self.raw_model.invoke([HumanMessage(content=prompt)])
             elapsed = time.time() - start
             console.print(f"[green]✓ Refiner done in {elapsed:.1f}s")
         
-        return {"messages": [AIMessage(content=f"Refiner: {response.summary}")]}
+        response_content = response.content if hasattr(response, 'content') else str(response)
+        return {"messages": [AIMessage(content=f"Refiner: {response_content}")]}
 
 
 
