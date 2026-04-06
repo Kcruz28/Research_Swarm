@@ -36,17 +36,13 @@ class Agents:
         last_message = state["messages"][-1].content if state["messages"] else ""
         feedback = f"\n\nCRITIC FEEDBACK: {last_message}" if "REJECTED" in last_message else ""
         
-        # print(f"--- RAW TEXT PREVIEW ---\n{data_text[:500]}\n-----------------------")
-
-        prompt = f"""
-        Summarize the following research paper. 
-        Focus on the TECHNICAL ARCHITECTURE and the QUANTITATIVE RESULTS.
+        max_chars = 100000 
+        truncated_text = data_text[:max_chars] + ("...[truncated]" if len(data_text) > max_chars else "")
+        print(f"--- RAW TEXT PREVIEW ---\n{truncated_text[:500]}\n-----------------------")
         
-        STRUCTURE:
-        - Core Contribution: (5-6 sentences)
-        - Key Metrics/Results: (Specific percentages or improvements)
-        - Methodology: (Algorithm names used) {data_text} {feedback}
-        If there is feedback above, ensure you incorporate the missing details into your new summary."""
+        with open("analyst_prompt.txt", "r") as f:
+            base_prompt = f.read()
+        prompt = base_prompt.replace("{text}", truncated_text).replace("{feedback}", feedback)
         
         with console.status("[bold blue]Analyst is deconstructing the paper...", spinner="dots"):
             start = time.time()
@@ -66,14 +62,13 @@ class Agents:
             return {"messages": [AIMessage(content="APPROVED: Maximum revision limit reached.")]}
 
         analysist_message = state["messages"][-1].content
-        paper_text = "\n".join([doc.page_content for doc in self.data])
-
-        prompt = f"""Compare this SUMMARY to the ORIGINAL PAPER.
-        SUMMARY: {analysist_message}
-        ORIGINAL PAPER: {paper_text} 
-        You are a harsh Peer Reviewer. Compare this summary to the original text. \
-        If the summary is missing specific metrics, names of algorithms, or actual results, \
-        you MUST set is_approved to False. Be pedantic."""
+        paper_text = "\n".join([doc.page_content for doc in self.data]) if isinstance(self.data, list) else self.data
+        max_chars = 100000 
+        truncated_text = paper_text[:max_chars] + ("...[truncated]" if len(paper_text) > max_chars else "")
+        
+        with open("critic_prompt.txt", "r") as f:
+            base_prompt = f.read()
+        prompt = base_prompt.replace("{summary}", analysist_message).replace("{text}", truncated_text)
         
         with console.status("[bold red]Critic is looking for flaws...", spinner="dots"):
             start = time.time()
@@ -88,23 +83,11 @@ class Agents:
 
     def refiner(self, state):
         console = Console()
-        # Extract the last message using .content attribute (not dictionary subscripting)
-        critic_message = state["messages"][-1].content
-
         full_history = "\n".join([m.content for m in state["messages"]])
-
-        prompt = f"""
-        Review the summary and the Critic's feedback below.
-        Produce a final technical summary that is dense with information.
         
-        CRITICAL RULES:
-        1. REMOVE 'filler' phrases (e.g., 'In this paper', 'The researchers found').
-        2. START with the technology itself.
-        3. ENSURE all metrics mentioned by the Critic are included.
-        4. Use 5-10 sentences to ensure depth.
-        
-        HISTORY: 
-        {full_history}"""
+        with open("refiner_prompt.txt", "r") as f:
+            base_prompt = f.read()
+        prompt = base_prompt.replace("{history}", full_history)
         
         with console.status("[bold green]Refiner is polishing the final summary...", spinner="dots"):
             start = time.time()
